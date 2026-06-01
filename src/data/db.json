@@ -4,7 +4,7 @@
       "id": 1,
       "name": "Administrador",
       "email": "admin@cinehub.com",
-      "password": "123456",
+      "password": "asd123",
       "role": "admin"
     },
     {
@@ -13,9 +13,22 @@
       "email": "user@cinehub.com",
       "password": "123456",
       "role": "user"
+    },
+    {
+      "name": "santiago",
+      "email": "s@a.com",
+      "password": "asdfghj",
+      "role": "user",
+      "id": 3
+    },
+    {
+      "name": "joelhz",
+      "email": "jh909423@gmail.com",
+      "password": "abcd1520",
+      "role": "user",
+      "id": 4
     }
   ],
-
   "favorites": [
     {
       "id": 1,
@@ -25,7 +38,6 @@
       "image": "https://static.tvmaze.com/uploads/images/medium_portrait/0/2400.jpg"
     }
   ],
-
   "news": [
     {
       "id": 1,
@@ -34,7 +46,6 @@
       "createdAt": "2026-05-31"
     }
   ],
-
   "categories": [
     {
       "id": 1,

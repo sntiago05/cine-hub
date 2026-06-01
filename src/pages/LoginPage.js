@@ -1,7 +1,7 @@
-import { authLayout } from "../layouts/authLayout";
-import { authService } from "../services/services";
+import { authLayout } from '../layouts/authLayout';
+import { login } from '../services/auth.service';
 
-export const loginPage = () => `
+export const LoginPage = () => `
 <div class="w-full max-w-md mx-auto">
 
   <div class="text-center mb-8">
@@ -28,9 +28,10 @@ export const loginPage = () => `
   "
   >
 
-    <!-- Área de mensajes de error -->
+    <!-- Área de mensajes de error general -->
     <div id="login-error" class="text-red-500 text-sm text-center hidden"></div>
 
+    <!-- Campo Email -->
     <div>
       <input
         id="login-email"
@@ -44,11 +45,13 @@ export const loginPage = () => `
         border border-slate-700
         focus:border-purple-500
         outline-none
+        transition
         "
       />
       <span id="email-error" class="text-red-400 text-xs hidden"></span>
     </div>
 
+    <!-- Campo Password -->
     <div>
       <input
         id="login-password"
@@ -62,11 +65,13 @@ export const loginPage = () => `
         border border-slate-700
         focus:border-purple-500
         outline-none
+        transition
         "
       />
       <span id="password-error" class="text-red-400 text-xs hidden"></span>
     </div>
 
+    <!-- Botón Submit -->
     <button
       type="submit"
       class="
@@ -77,16 +82,19 @@ export const loginPage = () => `
       py-3
       rounded-xl
       font-semibold
+      disabled:opacity-50
+      disabled:cursor-not-allowed
       "
     >
       Iniciar Sesión
     </button>
 
+    <!-- Link a Registro -->
     <p class="text-center text-slate-400 text-sm">
       ¿No tienes cuenta?
       <a
         href="/register"
-        class="text-purple-400 hover:text-purple-300"
+        class="text-purple-400 hover:text-purple-300 transition"
       >
         Regístrate
       </a>
@@ -102,11 +110,13 @@ export const loginPage = () => `
  */
 export const initLoginForm = () => {
   const form = document.getElementById('login-form');
-  
   if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
 
     // Obtener valores
     const email = document.getElementById('login-email').value;
@@ -118,10 +128,10 @@ export const initLoginForm = () => {
     document.getElementById('password-error').classList.add('hidden');
 
     // Intentar login
-    const result = await authService.login(email, password);
+    const result = await login(email, password);
 
     if (result.success) {
-      // Login exitoso - redirigir a inicio
+      // Login exitoso - redirigir
       window.location.href = '/';
     } else {
       // Mostrar errores
@@ -139,5 +149,7 @@ export const initLoginForm = () => {
         document.getElementById('login-error').classList.remove('hidden');
       }
     }
+
+    button.disabled = false;
   });
 };
