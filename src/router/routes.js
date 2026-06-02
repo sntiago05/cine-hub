@@ -1,6 +1,7 @@
 import { LoginPage, initLoginForm } from "../pages/LoginPage";
 import { ROUTES } from "./constants.routes";
 import { RegisterPage, initRegisterForm } from "../pages/RegisterPage";
+import { homePage, initHomePage } from "../pages/HomePage";
 
 export const routeConfig = {
 
@@ -14,7 +15,7 @@ export const routeConfig = {
         page: RegisterPage,
         init: initRegisterForm,
         roles: ["guest"]
-    },
+    }
 
 };
 /**

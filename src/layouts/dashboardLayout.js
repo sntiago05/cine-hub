@@ -1,4 +1,4 @@
-import { navbar } from "../components/navBar";
+import { navbar, initNavbar } from "../components/navBar";
 
 export const dashboardLayout = (content) => `
 <div class="min-h-screen bg-slate-950 text-white">
@@ -11,3 +11,10 @@ export const dashboardLayout = (content) => `
 
 </div>
 `;
+
+/**
+ * Inicializa el layout del dashboard
+ */
+export const initDashboardLayout = () => {
+  initNavbar();
+};
