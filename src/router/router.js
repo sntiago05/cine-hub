@@ -1,7 +1,7 @@
 import { routeConfig } from "./routes";
 import { ROUTES} from "./constants.routes"
 import { canAccessRoute } from "./protected.routes";
-//import { navigate } from "../utils/navigate";
+import { navigate } from "../utils/navigate";
 import { isAuthenticated, getUserRole } from "../utils/storage";
 
 export const renderRoute = () => {

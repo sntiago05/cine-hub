@@ -4,7 +4,7 @@
       "id": 1,
       "name": "Administrador",
       "email": "admin@cinehub.com",
-      "password": "asd123",
+      "password": "asdasd",
       "role": "admin"
     },
     {
@@ -18,7 +18,7 @@
       "name": "santiago",
       "email": "s@a.com",
       "password": "asdfghj",
-      "role": "user",
+      "role": "admin",
       "id": 3
     },
     {
@@ -44,6 +44,11 @@
       "title": "Nueva temporada anunciada",
       "content": "Se anunció una nueva temporada de una serie popular.",
       "createdAt": "2026-05-31"
+    },
+    {
+      "title": "jasdghadghads",
+      "content": "dsada",
+      "id": 2
     }
   ],
   "categories": [
@@ -54,10 +59,6 @@
     {
       "id": 2,
       "name": "Comedy"
-    },
-    {
-      "id": 3,
-      "name": "Action"
     },
     {
       "id": 4,
