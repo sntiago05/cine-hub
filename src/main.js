@@ -1,9 +1,9 @@
-import { navbar } from './components/navBar'
-import { loginPage } from './pages/loginPage'
-import { registerPage } from './pages/registerPage'
+import { initLoginForm, LoginPage } from './pages/LoginPage'
+import { initRegisterForm, RegisterPage } from './pages/RegisterPage'
+import { renderRoute } from './router/router';
+
 import './style.css'
 
-//entrada de la app
-/* 
-document.getElementById("app").innerHTML= navbar()
-document.getElementById("app").innerHTML+= registerPage() */
+document.addEventListener("DOMContentLoaded", () => renderRoute());
+window.addEventListener("popstate", renderRoute);
+window.addEventListener("routechange", renderRoute);
