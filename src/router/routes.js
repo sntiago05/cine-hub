@@ -1,14 +1,20 @@
-import { LoginPage, initLoginForm } from "../pages/LoginPage";
+import  { initLoginForm,LoginPage } from "../pages/LoginPage.js";
 import { ROUTES } from "./constants.routes";
 import { RegisterPage, initRegisterForm } from "../pages/RegisterPage";
 import { homePage, initHomePage } from "../pages/HomePage";
 
+// Importaciones de tus módulos de administración:
+import { AdminDashboard, initAdminDashboard } from "../pages/AdminDashboard.js";
+import { AdminUsers, initAdminUsers } from "../pages/AdminUsers.js";
+import { AdminNews, initAdminNews } from "../pages/AdminNews.js";
+import { AdminCategories, initAdminCategories } from "../pages/AdminCategories.js";
+
 export const routeConfig = {
 
     [ROUTES.LOGIN]: {
-        page: LoginPage,
+        page: LoginPage, // Usando la exportación corregida en minúscula
         init: initLoginForm,
-        roles: ["guest"]
+        roles: ["guest","admin"]
     },
 
     [ROUTES.REGISTER]: {
@@ -16,27 +22,6 @@ export const routeConfig = {
         init: initRegisterForm,
         roles: ["guest"]
     }
-
-};
-/**
- * 
-    [ROUTES.HOME]: {
-        page: HomePage,
-        init: initHomePage,
-        roles: ["user", "admin"]
-    },
-
-    [ROUTES.FAVORITES]: {
-        page: FavoritesPage,
-        init: initFavoritesPage,
-        roles: ["user"]
-    },
-
-    [ROUTES.PROFILE]: {
-        page: ProfilePage,
-        init: initProfilePage,
-        roles: ["user"]
-    },
 
     [ROUTES.ADMIN]: {
         page: AdminDashboard,
@@ -60,6 +45,26 @@ export const routeConfig = {
         page: AdminCategories,
         init: initAdminCategories,
         roles: ["admin"]
-    }
+    },
 
+};
+
+/**
+    [ROUTES.HOME]: {
+        page: HomePage,
+        init: initHomePage,
+        roles: ["user", "admin"]
+    },
+
+    [ROUTES.FAVORITES]: {
+        page: FavoritesPage,
+        init: initFavoritesPage,
+        roles: ["user"]
+    },
+
+    [ROUTES.PROFILE]: {
+        page: ProfilePage,
+        init: initProfilePage,
+        roles: ["user"]
+    }
  */
