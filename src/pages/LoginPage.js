@@ -1,5 +1,6 @@
 import { authLayout } from '../layouts/authLayout';
 import { login } from '../services/auth.service';
+import { navigate } from '../utils/navigate';
 
 export const LoginPage = () => `
 <div class="w-full max-w-md mx-auto">
@@ -93,7 +94,7 @@ export const LoginPage = () => `
     <p class="text-center text-slate-400 text-sm">
       ¿No tienes cuenta?
       <a
-        href="/register"
+        id="register-nav"
         class="text-purple-400 hover:text-purple-300 transition"
       >
         Regístrate
@@ -152,4 +153,8 @@ export const initLoginForm = () => {
 
     button.disabled = false;
   });
+
+  document.getElementById("register-nav").addEventListener("click",()=>{
+    navigate("/register")
+  }) 
 };

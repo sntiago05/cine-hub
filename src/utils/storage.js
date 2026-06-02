@@ -54,3 +54,9 @@ export const clearSession = () => {
 export const isAuthenticated = () => {
   return getSession() !== null;
 };
+
+
+export const getUserRole = () => {
+  const session = getSession();
+  return session?.role || "guest";
+};
