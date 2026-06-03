@@ -1,196 +1,145 @@
-import { dashboardLayout } from '../layouts/dashboardLayout';
 import { tvmazeService } from '../services/tvmaze.service';
+import { addFavorite, getFavoriteByShow, removeFavorite } from '../services/favorites.service';
 import { navigate } from '../utils/navigate';
+import { getSession } from '../utils/storage';
+import { ROUTES } from '../router/constants.routes';
+import { confirmDialog, toast } from '../components/feedback';
+import { escapeHtml, stripHtml } from '../utils/utils';
 
-/**
- * ShowDetailsPage - Página de detalle de una serie
- * @param {string} id - ID de la serie
- * @returns {Promise<string>} HTML de la página
- */
-export const ShowDetailsPage = async (id) => {
+export const ShowDetailsPage = async ({ id }) => {
   try {
     const show = await tvmazeService.getShowById(id);
+    const user = getSession();
+    const existingFavorite = await getFavoriteByShow(user.id, Number(id));
 
     const genres = show.genres?.length > 0 ? show.genres.join(', ') : 'No especificados';
     const rating = show.rating?.average ? show.rating.average.toFixed(1) : 'N/A';
-    const summary = show.summary ? show.summary.replace(/<[^>]*>/g, '') : 'No hay descripción disponible.';
+    const summary = show.summary ? stripHtml(show.summary) : 'No hay descripcion disponible.';
     const image = show.image?.original || 'https://placehold.co/400x600';
+    const mediumImage = show.image?.medium || image;
 
-    const html = `
-      <div class="w-full max-w-5xl mx-auto px-4 py-8">
-        
-        <!-- Back Button -->
+    return `
+      <div class="w-full max-w-5xl mx-auto py-4 sm:py-8">
         <button
           id="back-btn"
-          class="
-            mb-6
-            px-4
-            py-2
-            bg-slate-800
-            hover:bg-slate-700
-            transition
-            rounded-xl
-            text-sm
-            font-medium
-          "
+          class="mb-6 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400"
         >
-          ← Volver
+          Volver
         </button>
 
-        <!-- Content -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          <!-- Image -->
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div class="md:col-span-1">
             <img
               src="${image}"
-              alt="${show.name}"
-              class="w-full rounded-2xl shadow-xl"
+              alt="${escapeHtml(show.name)}"
+              class="w-full rounded-lg border border-slate-800 shadow-xl"
             />
           </div>
 
-          <!-- Info -->
           <div class="md:col-span-2">
-            
-            <h1 class="text-5xl font-black mb-4">
-              ${show.name}
+            <h1 class="mb-4 text-4xl font-black sm:text-5xl">
+              ${escapeHtml(show.name)}
             </h1>
 
-            <!-- Rating -->
+            <p class="mb-6 text-3xl font-bold text-yellow-300">
+              ${rating}
+            </p>
+
             <div class="mb-6">
-              <p class="text-3xl text-yellow-400 font-bold">
-                ⭐ ${rating}
-              </p>
+              <h3 class="mb-2 text-sm font-semibold text-slate-400">GENEROS</h3>
+              <p class="text-lg">${escapeHtml(genres)}</p>
             </div>
 
-            <!-- Genres -->
-            <div class="mb-6">
-              <h3 class="text-sm font-semibold text-slate-400 mb-2">GÉNEROS</h3>
-              <p class="text-lg">${genres}</p>
-            </div>
-
-            <!-- Summary -->
             <div class="mb-8">
-              <h3 class="text-sm font-semibold text-slate-400 mb-3">RESUMEN</h3>
+              <h3 class="mb-3 text-sm font-semibold text-slate-400">RESUMEN</h3>
               <p class="text-base leading-relaxed text-slate-300">
-                ${summary}
+                ${escapeHtml(summary)}
               </p>
             </div>
 
-            <!-- Additional Info -->
-            <div class="grid grid-cols-2 gap-4 mb-8">
-              <div>
-                <p class="text-xs font-semibold text-slate-400 mb-1">ESTADO</p>
-                <p class="text-lg">${show.status || 'Desconocido'}</p>
+            <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+                <p class="mb-1 text-xs font-semibold text-slate-400">ESTADO</p>
+                <p class="text-lg">${escapeHtml(show.status || 'Desconocido')}</p>
               </div>
-              <div>
-                <p class="text-xs font-semibold text-slate-400 mb-1">TIPO</p>
-                <p class="text-lg">${show.type || 'Desconocido'}</p>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+                <p class="mb-1 text-xs font-semibold text-slate-400">TIPO</p>
+                <p class="text-lg">${escapeHtml(show.type || 'Desconocido')}</p>
               </div>
             </div>
 
-            <!-- Add to Favorites Button -->
             <button
               id="favorite-btn"
               data-show-id="${show.id}"
-              data-show-name="${show.name}"
-              class="
-                w-full
-                px-6
-                py-3
-                bg-purple-600
-                hover:bg-purple-700
-                transition
-                rounded-xl
-                font-semibold
-                text-lg
-              "
+              data-show-name="${escapeHtml(show.name)}"
+              data-show-image="${mediumImage}"
+              data-favorite-id="${existingFavorite?.id ?? ""}"
+              class="w-full rounded-lg px-6 py-3 text-lg font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${existingFavorite ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'}"
             >
-              ❤️ Agregar a Favoritos
+              ${existingFavorite ? 'Eliminar de Favoritos' : 'Agregar a Favoritos'}
             </button>
-
           </div>
-
         </div>
-
       </div>
     `;
-
-    return html;
-  } catch (error) {
-    console.error('Error loading show details:', error);
+  } catch {
     return `
-      <div class="w-full max-w-5xl mx-auto px-4 py-8 text-center">
-        <p class="text-red-500 text-lg mb-4">Error al cargar los detalles de la serie.</p>
-        <button
-          id="back-btn"
-          class="
-            px-4
-            py-2
-            bg-slate-800
-            hover:bg-slate-700
-            transition
-            rounded-xl
-            text-sm
-            font-medium
-          "
-        >
-          ← Volver
+      <div class="w-full max-w-5xl mx-auto py-8 text-center">
+        <p class="mb-4 text-lg text-red-400">Error al cargar los detalles de la serie.</p>
+        <button id="back-btn" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold hover:bg-slate-700">
+          Volver
         </button>
       </div>
     `;
   }
 };
 
-/**
- * Inicializa los event listeners de ShowDetailsPage
- * @param {string} id - ID de la serie
- */
-export const initShowDetailsPage = (id) => {
-  // Botón volver
-  const backBtn = document.getElementById('back-btn');
-  if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      navigate('/');
-    });
-  }
+export const initShowDetailsPage = () => {
+  document.getElementById('back-btn')?.addEventListener('click', () => {
+    navigate(ROUTES.HOME);
+  });
 
-  // Botón agregar a favoritos
   const favoriteBtn = document.getElementById('favorite-btn');
-  if (favoriteBtn) {
-    const showId = parseInt(favoriteBtn.dataset.showId);
-    const showName = favoriteBtn.dataset.showName;
-    
-    // Verificar si ya está en favoritos y actualizar estado visual
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    const isFavorite = favorites.some((fav) => fav.id === showId);
-    
-    if (isFavorite) {
-      favoriteBtn.textContent = '❤️ Eliminar de Favoritos';
-      favoriteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-      favoriteBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-    }
-    
-    favoriteBtn.addEventListener('click', () => {
-      // Obtener favoritos del localStorage
-      const currentFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
-      const isCurrentlyFavorite = currentFavorites.some((fav) => fav.id === showId);
+  if (!favoriteBtn) return;
 
-      if (isCurrentlyFavorite) {
-        // Remover de favoritos
-        const filtered = currentFavorites.filter((fav) => fav.id !== showId);
-        localStorage.setItem('favorites', JSON.stringify(filtered));
-        favoriteBtn.textContent = '❤️ Agregar a Favoritos';
-        favoriteBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-        favoriteBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
-      } else {
-        // Agregar a favoritos
-        currentFavorites.push({ id: showId, name: showName });
-        localStorage.setItem('favorites', JSON.stringify(currentFavorites));
-        favoriteBtn.textContent = '❤️ Eliminar de Favoritos';
-        favoriteBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-        favoriteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+  favoriteBtn.addEventListener('click', async () => {
+    const user = getSession();
+    const showId = Number(favoriteBtn.dataset.showId);
+    const showName = favoriteBtn.dataset.showName;
+    const image = favoriteBtn.dataset.showImage;
+    const favoriteId = favoriteBtn.dataset.favoriteId;
+
+    try {
+      favoriteBtn.disabled = true;
+
+      if (favoriteId) {
+        const confirmed = await confirmDialog({
+          title: "Eliminar favorito",
+          message: "Esta serie se quitara de tu lista de favoritos.",
+          confirmText: "Eliminar",
+          danger: true
+        });
+        if (!confirmed) return;
+
+        await removeFavorite(favoriteId);
+        favoriteBtn.dataset.favoriteId = "";
+        favoriteBtn.textContent = "Agregar a Favoritos";
+        favoriteBtn.classList.remove("bg-red-600", "text-white", "hover:bg-red-500");
+        favoriteBtn.classList.add("bg-cyan-500", "text-slate-950", "hover:bg-cyan-400");
+        toast("Favorite removed");
+        return;
       }
-    });
-  }
+
+      const created = await addFavorite({ userId: user.id, showId, showName, image });
+      favoriteBtn.dataset.favoriteId = created.id;
+      favoriteBtn.textContent = "Eliminar de Favoritos";
+      favoriteBtn.classList.remove("bg-cyan-500", "text-slate-950", "hover:bg-cyan-400");
+      favoriteBtn.classList.add("bg-red-600", "text-white", "hover:bg-red-500");
+      toast("Favorite added");
+    } catch {
+      toast("Network error while updating favorites", "error");
+    } finally {
+      favoriteBtn.disabled = false;
+    }
+  });
 };

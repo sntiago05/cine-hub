@@ -2,42 +2,80 @@ import { routeConfig } from "./routes";
 import { ROUTES} from "./constants.routes"
 import { canAccessRoute } from "./protected.routes";
 import { navigate } from "../utils/navigate";
-import { isAuthenticated, getUserRole } from "../utils/storage";
+import { getUserRole } from "../utils/storage";
 
-export const renderRoute = () => {
+const app = () => document.querySelector("#app");
 
-    const path = window.location.pathname;
-    if (path.startsWith(`${ROUTES.SHOW_DETAILS}/`)) {
-        if (!isAuthenticated()) {
-            navigate(ROUTES.LOGIN);
-            return;
-        }
+const notFoundPage = () => `
+  <main class="min-h-screen bg-slate-950 text-white grid place-items-center px-4">
+    <section class="max-w-md text-center">
+      <p class="text-sm font-semibold uppercase tracking-wide text-cyan-300">404</p>
+      <h1 class="mt-3 text-3xl font-black">Ruta no encontrada</h1>
+      <p class="mt-3 text-slate-400">La pagina solicitada no existe o fue movida.</p>
+      <button id="not-found-home" class="mt-6 rounded-lg bg-cyan-500 px-5 py-2.5 font-semibold text-slate-950 hover:bg-cyan-400">
+        Volver al inicio
+      </button>
+    </section>
+  </main>
+`;
+
+const matchRoute = (path) => {
+    const direct = routeConfig[path];
+    if (direct) return { route: direct, params: {} };
+
+    const showPrefix = `${ROUTES.SHOW_DETAILS}/`;
+    if (path.startsWith(showPrefix)) {
+        const id = path.slice(showPrefix.length).split("/")[0];
+        return { route: routeConfig[`${ROUTES.SHOW_DETAILS}/:id`], params: { id } };
+    }
+
+    const newsPrefix = `${ROUTES.NEWS}/`;
+    if (path.startsWith(newsPrefix)) {
+        const id = path.slice(newsPrefix.length).split("/")[0];
+        return { route: routeConfig[`${ROUTES.NEWS}/:id`], params: { id } };
+    }
+
+    if (path.startsWith("/show/")) {
         const id = path.split("/")[2];
-        document.querySelector("#app").innerHTML = ShowDetailsPage(id);
-        initShowDetailsPage?.();
-        return;
+        navigate(`${ROUTES.SHOW_DETAILS}/${id}`, { replace: true });
+        return { route: null, params: {} };
     }
-    const route = routeConfig[path];
+
+    return { route: null, params: {} };
+};
+
+export const renderRoute = async () => {
+    const path = window.location.pathname;
+    const role = getUserRole();
+    const { route, params } = matchRoute(path);
+
     if (!route) {
-        document.querySelector("#app").innerHTML = "<h1>404</h1>";
+        app().innerHTML = notFoundPage();
+        document.getElementById("not-found-home")?.addEventListener("click", () => navigate(ROUTES.ROOT));
         return;
     }
-    if (!canAccessRoute(path)) {
-        const role = getUserRole();
+
+    if (route.redirect) {
+        navigate(route.redirect({ role }), { replace: true });
+        return;
+    }
+
+    if (!canAccessRoute(route)) {
         if (role === "guest") {
-            navigate(ROUTES.LOGIN);
+            navigate(ROUTES.LOGIN, { replace: true });
             return;
         }
         if (role === "admin") {
-            navigate(ROUTES.ADMIN);
+            navigate(ROUTES.ADMIN, { replace: true });
             return;
         }
-        navigate(ROUTES.HOME);
-
+        navigate(ROUTES.HOME, { replace: true });
         return;
     }
 
-
-    document.querySelector("#app").innerHTML = route.page();
-    route.init?.();
+    app().innerHTML = route.layout
+        ? route.layout(await route.page(params))
+        : await route.page(params);
+    route.layoutInit?.();
+    await route.init?.(params);
 };

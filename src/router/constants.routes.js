@@ -1,10 +1,12 @@
 export const ROUTES = {
+  ROOT: "/",
   LOGIN: "/login",
   REGISTER: "/register",
 
-  HOME: "/",
+  HOME: "/home",
 
-  SHOW_DETAILS: "/show",
+  SHOW_DETAILS: "/series",
+  NEWS: "/news",
 
   FAVORITES: "/favorites",
   PROFILE: "/profile",

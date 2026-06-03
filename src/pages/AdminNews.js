@@ -4,11 +4,14 @@
 // Follows the router contract: page() → init?().
 
 import {
-  fetchAllNews,
+  fetchAllNewsWithCategories,
   createNewsArticle,
   updateNewsArticleById,
   deleteNewsArticleById,
 } from "../services/news.service.js";
+import { fetchAllCategories } from "../services/categories.service.js";
+import { confirmDialog, setButtonLoading, toast } from "../components/feedback.js";
+import { escapeHtml } from "../utils/utils.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -22,6 +25,7 @@ const NEWS_MODAL_ID = "news-modal";
 
 /** ID of the modal form element. */
 const NEWS_FORM_ID = "news-form";
+let categoriesCache = [];
 
 // ---------------------------------------------------------------------------
 // Private helpers — rendering
@@ -33,21 +37,48 @@ const NEWS_FORM_ID = "news-form";
  * @param {{ id: number|string, title: string, content: string }} article
  * @returns {string} HTML string for a <tr> element.
  */
+function buildCategoryOptions(selectedCategoryId = "") {
+  return categoriesCache.map((category) => `
+    <option value="${category.id}" ${String(category.id) === String(selectedCategoryId) ? "selected" : ""}>
+      ${escapeHtml(category.name)}
+    </option>
+  `).join("");
+}
+
+function getCategoryName(article) {
+  return article.category?.name
+    ?? categoriesCache.find((category) => String(category.id) === String(article.categoryId))?.name
+    ?? "Uncategorized";
+}
+
 function buildNewsTableRow(article) {
   return `
     <tr data-news-id="${article.id}"
+        data-category-id="${article.categoryId ?? ""}"
+        data-author="${escapeHtml(article.author ?? "")}"
+        data-created-at="${escapeHtml(article.createdAt ?? "")}"
         class="border-b border-gray-100 dark:border-gray-700
                hover:bg-gray-50 dark:hover:bg-gray-700/40
                transition-colors duration-150">
 
       <!-- Title -->
       <td class="px-6 py-4 text-sm font-medium text-gray-800 dark:text-gray-100">
-        ${article.title ?? "—"}
+        ${escapeHtml(article.title ?? "—")}
       </td>
 
       <!-- Content preview -->
       <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-        ${article.content ?? "—"}
+        ${escapeHtml(article.content ?? "—")}
+      </td>
+
+      <td class="px-6 py-4 whitespace-nowrap">
+        <span class="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+          ${escapeHtml(getCategoryName(article))}
+        </span>
+      </td>
+
+      <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+        ${escapeHtml(article.createdAt ?? "—")}
       </td>
 
       <!-- Actions -->
@@ -105,7 +136,7 @@ function buildNewsTableBody(articles) {
   if (articles.length === 0) {
     return `
       <tr>
-        <td colspan="3"
+        <td colspan="5"
             class="px-6 py-12 text-center text-sm
                    text-gray-400 dark:text-gray-500">
           No news articles found. Click "Add News" to create the first one.
@@ -132,6 +163,12 @@ function buildSkeletonRows() {
         <div class="h-4 w-64 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
       </td>
       <td class="px-6 py-4">
+        <div class="h-5 w-24 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+      </td>
+      <td class="px-6 py-4">
+        <div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+      </td>
+      <td class="px-6 py-4">
         <div class="flex gap-2">
           <div class="h-7 w-16 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
           <div class="h-7 w-16 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
@@ -149,7 +186,7 @@ function buildSkeletonRows() {
  * Builds the HTML string for the create/edit modal dialog.
  * When an article is provided, the form fields are pre-filled for editing.
  *
- * @param {{ id: number|string, title: string, content: string } | null} article
+ * @param {{ id: number|string, title: string, content: string, categoryId?: number|string, author?: string, createdAt?: string } | null} article
  * - Pass an article object to open the modal in edit mode.
  * - Pass null to open it in create mode.
  * @returns {string} HTML string for the modal overlay.
@@ -199,7 +236,7 @@ function buildNewsModal(article = null) {
               name="title"
               type="text"
               placeholder="Enter article title"
-              value="${isEditing ? article.title : ""}"
+              value="${isEditing ? escapeHtml(article.title) : ""}"
               required
               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
                      bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100
@@ -226,7 +263,65 @@ function buildNewsModal(article = null) {
                      placeholder-gray-400 dark:placeholder-gray-500
                      px-3.5 py-2.5 outline-none resize-none
                      focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                     transition duration-150">${isEditing ? article.content : ""}</textarea>
+                     transition duration-150">${isEditing ? escapeHtml(article.content) : ""}</textarea>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1.5">
+              <label for="news-category"
+                     class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <select
+                id="news-category"
+                name="categoryId"
+                required
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100
+                       px-3.5 py-2.5 outline-none
+                       focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition duration-150">
+                <option value="">Choose category</option>
+                ${buildCategoryOptions(article?.categoryId ?? "")}
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="news-date"
+                     class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Publication date
+              </label>
+              <input
+                id="news-date"
+                name="createdAt"
+                type="date"
+                value="${isEditing ? escapeHtml(article.createdAt ?? "") : new Date().toISOString().slice(0, 10)}"
+                required
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100
+                       px-3.5 py-2.5 outline-none
+                       focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition duration-150"/>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="news-author"
+                   class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Author
+            </label>
+            <input
+              id="news-author"
+              name="author"
+              type="text"
+              placeholder="CineHub editorial"
+              value="${isEditing ? escapeHtml(article.author ?? "") : ""}"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                     bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100
+                     placeholder-gray-400 dark:placeholder-gray-500
+                     px-3.5 py-2.5 outline-none
+                     focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                     transition duration-150"/>
           </div>
 
           <!-- Form actions -->
@@ -269,7 +364,7 @@ async function refreshNewsTable() {
   const tableBody = document.getElementById(NEWS_TABLE_BODY_ID);
   if (!tableBody) return;
 
-  const articles = await fetchAllNews();
+  const articles = await fetchAllNewsWithCategories();
   tableBody.innerHTML = buildNewsTableBody(articles);
 }
 
@@ -310,16 +405,29 @@ async function handleNewsFormSubmit(event) {
   const payload   = {
     title:   form.title.value.trim(),
     content: form.content.value.trim(),
+    categoryId: Number(form.categoryId.value),
+    author: form.author.value.trim() || "CineHub editorial",
+    createdAt: form.createdAt.value,
   };
 
-  if (editingId) {
-    await updateNewsArticleById(editingId, payload);
-  } else {
-    await createNewsArticle(payload);
-  }
+  const submitButton = form.querySelector('button[type="submit"]');
+  const stopLoading = setButtonLoading(submitButton, editingId ? "Guardando..." : "Creando...");
 
-  closeNewsModal();
-  await refreshNewsTable();
+  try {
+    const result = editingId
+      ? await updateNewsArticleById(editingId, payload)
+      : await createNewsArticle(payload);
+
+    if (!result) throw new Error("Request failed");
+
+    toast(editingId ? "News updated" : "News created");
+    closeNewsModal();
+    await refreshNewsTable();
+  } catch {
+    toast("API failure while saving news", "error");
+  } finally {
+    stopLoading();
+  }
 }
 
 /**
@@ -351,20 +459,31 @@ async function handleNewsPageClick(event) {
     const row       = target.closest("tr[data-news-id]");
     const title     = row.querySelector("td:nth-child(1)")?.textContent.trim();
     const content   = row.querySelector("td:nth-child(2)")?.textContent.trim();
+    const categoryId = row.dataset.categoryId;
+    const author = row.dataset.author;
+    const createdAt = row.dataset.createdAt;
 
-    openNewsModal({ id: articleId, title, content });
+    openNewsModal({ id: articleId, title, content, categoryId, author, createdAt });
     attachNewsFormListener();
     return;
   }
 
   if (action === "delete-news") {
     const articleId = target.dataset.id;
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this article? This action cannot be undone."
-    );
+    const confirmed = await confirmDialog({
+      title: "Delete news",
+      message: "This article will be permanently removed.",
+      confirmText: "Delete",
+      danger: true
+    });
     if (!confirmed) return;
 
-    await deleteNewsArticleById(articleId);
+    const deleted = await deleteNewsArticleById(articleId);
+    if (!deleted) {
+      toast("API failure while deleting news", "error");
+      return;
+    }
+    toast("News deleted");
     await refreshNewsTable();
   }
 }
@@ -391,7 +510,7 @@ function attachNewsFormListener() {
  */
 export function AdminNews() {
   return `
-    <section class="flex flex-col gap-8 p-6 md:p-10 min-h-screen
+    <section id="admin-news-page" class="flex flex-col gap-8 p-4 sm:p-6 md:p-10 min-h-screen
                     bg-gray-50 dark:bg-gray-900">
 
       <!-- Page header -->
@@ -440,6 +559,14 @@ export function AdminNews() {
                 </th>
                 <th class="px-6 py-3 text-xs font-semibold uppercase
                            tracking-wider text-gray-500 dark:text-gray-400">
+                  Category
+                </th>
+                <th class="px-6 py-3 text-xs font-semibold uppercase
+                           tracking-wider text-gray-500 dark:text-gray-400">
+                  Date
+                </th>
+                <th class="px-6 py-3 text-xs font-semibold uppercase
+                           tracking-wider text-gray-500 dark:text-gray-400">
                   Actions
                 </th>
               </tr>
@@ -469,8 +596,9 @@ export async function initAdminNews() {
   const tableBody = document.getElementById(NEWS_TABLE_BODY_ID);
   if (!tableBody) return;
 
-  const articles = await fetchAllNews();
+  categoriesCache = await fetchAllCategories();
+  const articles = await fetchAllNewsWithCategories();
   tableBody.innerHTML = buildNewsTableBody(articles);
 
-  document.addEventListener("click", handleNewsPageClick);
+  document.getElementById("admin-news-page")?.addEventListener("click", handleNewsPageClick);
 }

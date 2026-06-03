@@ -1,8 +1,14 @@
-import { dashboardLayout } from '../layouts/dashboardLayout';
 import { SearchBar, initSearchBar } from '../components/SearchBar';
 import { showCard } from '../components/showCard';
+import { Loader } from '../components/Loader';
+import { newsCard } from '../components/newsCard';
 import { tvmazeService } from '../services/tvmaze.service';
+import { fetchAllNewsWithCategories } from '../services/news.service';
+import { addFavorite, getFavoriteByShow, removeFavorite } from '../services/favorites.service';
 import { navigate } from '../utils/navigate';
+import { getSession } from '../utils/storage';
+import { ROUTES } from '../router/constants.routes';
+import { toast } from '../components/feedback';
 
 /**
  * Maneja la búsqueda de series
@@ -52,35 +58,70 @@ const attachCardListeners = () => {
   document.querySelectorAll('.view-show-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const showId = btn.dataset.showId;
-      navigate(`/show/${showId}`);
+      navigate(`${ROUTES.SHOW_DETAILS}/${showId}`);
     });
   });
 
   // Botones de favorito
   document.querySelectorAll('.favorite-btn').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const showId = btn.dataset.showId;
+      const user = getSession();
+      const showId = Number(btn.dataset.showId);
       const showName = btn.dataset.showName;
+      const image = btn.dataset.showImage || 'https://placehold.co/300x450';
 
-      // Obtener favoritos del localStorage
-      const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-      const isFavorite = favorites.some((fav) => fav.id === parseInt(showId));
-
-      if (isFavorite) {
-        // Remover de favoritos
-        const filtered = favorites.filter((fav) => fav.id !== parseInt(showId));
-        localStorage.setItem('favorites', JSON.stringify(filtered));
-        btn.classList.remove('opacity-100');
-        btn.classList.add('opacity-50');
-      } else {
-        // Agregar a favoritos
-        favorites.push({ id: parseInt(showId), name: showName });
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-        btn.classList.remove('opacity-50');
-        btn.classList.add('opacity-100');
+      try {
+        btn.disabled = true;
+        const existing = await getFavoriteByShow(user.id, showId);
+        if (existing) {
+          await removeFavorite(existing.id);
+          toast("Favorite removed");
+        } else {
+          await addFavorite({ userId: user.id, showId, showName, image });
+          toast("Favorite added");
+        }
+      } catch {
+        toast("Network error while updating favorites", "error");
+      } finally {
+        btn.disabled = false;
       }
     });
+  });
+};
+
+const loadLatestNews = async () => {
+  const loading = document.getElementById("latest-news-loading");
+  const grid = document.getElementById("latest-news-grid");
+  const empty = document.getElementById("latest-news-empty");
+  if (!loading || !grid || !empty) return;
+
+  try {
+    const articles = await fetchAllNewsWithCategories();
+    const latest = articles
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 3);
+
+    if (latest.length === 0) {
+      empty.classList.remove("hidden");
+      return;
+    }
+
+    grid.innerHTML = latest.map(newsCard).join("");
+    grid.classList.remove("hidden");
+  } catch {
+    empty.textContent = "No news available at the moment.";
+    empty.classList.remove("hidden");
+  } finally {
+    loading.classList.add("hidden");
+  }
+};
+
+const attachLatestNewsListeners = () => {
+  document.getElementById("latest-news-section")?.addEventListener("click", (event) => {
+    const routeButton = event.target.closest("[data-route]");
+    if (!routeButton) return;
+    navigate(routeButton.dataset.route);
   });
 };
 
@@ -92,8 +133,8 @@ export const homePage = () => {
   const html = `
     <div class="w-full max-w-7xl mx-auto px-4 py-8">
       
-      <div class="mb-12">
-        <h1 class="text-5xl font-black mb-3">
+      <div class="mb-10">
+        <h1 class="text-4xl sm:text-5xl font-black mb-3">
           CineHub
         </h1>
         <p class="text-slate-400">
@@ -129,6 +170,29 @@ export const homePage = () => {
         </p>
       </div>
 
+      <section id="latest-news-section" class="mt-14">
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-2xl font-black">Latest News</h2>
+            <p class="mt-1 text-slate-400">Updates and highlights curated by CineHub.</p>
+          </div>
+          <button
+            data-route="${ROUTES.NEWS}"
+            class="w-fit rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+          >
+            View all
+          </button>
+        </div>
+
+        <div id="latest-news-loading">
+          ${Loader("Loading latest news...")}
+        </div>
+        <p id="latest-news-empty" class="hidden rounded-lg border border-slate-800 bg-slate-900 p-6 text-center text-slate-400">
+          No news available at the moment.
+        </p>
+        <div id="latest-news-grid" class="hidden grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
+      </section>
+
     </div>
   `;
 
@@ -140,4 +204,6 @@ export const homePage = () => {
  */
 export const initHomePage = () => {
   initSearchBar(handleSearch);
+  attachLatestNewsListeners();
+  loadLatestNews();
 };

@@ -1,4 +1,3 @@
-import { routeConfig } from "./routes";
 import { getUserRole } from "../utils/storage";
 /**
  * Checks whether the current user is allowed to access a route.
@@ -10,13 +9,8 @@ import { getUserRole } from "../utils/storage";
  * @returns {boolean} Returns `true` if the user's role is allowed
  * to access the route; otherwise returns `false`.
  */
-export const canAccessRoute = (path) => {
-
+export const canAccessRoute = (route) => {
     const role = getUserRole();
-
-    const route = routeConfig[path];
-
     if (!route) return false;
-
     return route.roles.includes(role);
 };

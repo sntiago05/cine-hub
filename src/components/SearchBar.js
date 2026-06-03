@@ -4,7 +4,7 @@
  */
 export const SearchBar = () => `
 <div class="mb-8">
-  <form id="search-form" class="flex gap-2">
+  <form id="search-form" class="flex flex-col gap-2 sm:flex-row">
     <input
       id="search-input"
       type="text"
@@ -13,10 +13,12 @@ export const SearchBar = () => `
         flex-1
         px-4
         py-3
-        rounded-xl
+        rounded-lg
         bg-slate-800
         border border-slate-700
-        focus:border-purple-500
+        focus:border-cyan-400
+        focus:ring-2
+        focus:ring-cyan-400/30
         outline-none
         text-white
         placeholder-slate-400
@@ -27,10 +29,11 @@ export const SearchBar = () => `
       class="
         px-6
         py-3
-        bg-purple-600
-        hover:bg-purple-700
+        bg-cyan-500
+        text-slate-950
+        hover:bg-cyan-400
         transition
-        rounded-xl
+        rounded-lg
         font-semibold
         whitespace-nowrap
       "

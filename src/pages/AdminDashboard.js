@@ -4,16 +4,15 @@
 // This separation follows the router contract: page() → init?().
 
 import { fetchAllUsers }      from "../services/users.service";
-import { fetchAllNews }       from "../services/news.service";
+import { fetchAllNewsWithCategories } from "../services/news.service";
 import { fetchAllCategories } from "../services/categories.service";
+import { countFavorites }      from "../services/favorites.service";
 import { StatsCard }          from "../components/StatsCard";
+import { escapeHtml }         from "../utils/utils";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/** Temporary static value — replace once the favorites service is implemented. */
-const FAVORITES_PLACEHOLDER = 12;
 
 /**
  * Declarative configuration for each metric card.
@@ -78,17 +77,25 @@ const STATS_CARDS_CONFIG = [
  * @returns {Promise<{ users: number, favorites: number, news: number, categories: number }>}
  */
 async function fetchDashboardMetrics() {
-  const [users, news, categories] = await Promise.all([
+  const [users, news, categories, favorites] = await Promise.all([
     fetchAllUsers(),
-    fetchAllNews(),
+    fetchAllNewsWithCategories(),
     fetchAllCategories(),
+    countFavorites().catch(() => 0),
   ]);
 
   return {
     users:      users.length,
-    favorites:  FAVORITES_PLACEHOLDER,
+    favorites,
     news:       news.length,
     categories: categories.length,
+    latestNews: news
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 3),
+    categoryCoverage: categories.map((category) => ({
+      name: category.name,
+      count: news.filter((article) => String(article.categoryId) === String(category.id)).length,
+    })),
   };
 }
 
@@ -136,6 +143,44 @@ function buildSkeletonGrid() {
   `;
 }
 
+function buildQuickSummary(metrics) {
+  const latestNews = metrics.latestNews.length
+    ? metrics.latestNews.map((article) => `
+        <li class="flex items-center justify-between gap-4 border-b border-gray-100 py-3 last:border-0 dark:border-gray-700">
+          <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+            ${escapeHtml(article.title ?? "Untitled")}
+          </span>
+          <span class="shrink-0 rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+            ${escapeHtml(article.category?.name ?? "Uncategorized")}
+          </span>
+        </li>
+      `).join("")
+    : `<li class="py-6 text-center text-sm text-gray-400">No news available.</li>`;
+
+  const categoryCoverage = metrics.categoryCoverage.length
+    ? metrics.categoryCoverage.map((category) => `
+        <li class="flex items-center justify-between gap-4 py-2">
+          <span class="text-sm text-gray-600 dark:text-gray-300">${escapeHtml(category.name)}</span>
+          <span class="text-sm font-bold text-gray-900 dark:text-gray-100">${category.count}</span>
+        </li>
+      `).join("")
+    : `<li class="py-6 text-center text-sm text-gray-400">No categories available.</li>`;
+
+  return `
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <h2 class="text-base font-bold text-gray-800 dark:text-gray-100">Latest news</h2>
+        <ul class="mt-3">${latestNews}</ul>
+      </section>
+
+      <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <h2 class="text-base font-bold text-gray-800 dark:text-gray-100">News by category</h2>
+        <ul class="mt-3">${categoryCoverage}</ul>
+      </section>
+    </div>
+  `;
+}
+
 // ---------------------------------------------------------------------------
 // Router contract exports
 // ---------------------------------------------------------------------------
@@ -167,6 +212,8 @@ export function AdminDashboard() {
         ${buildSkeletonGrid()}
       </div>
 
+      <div id="dashboard-summary-grid"></div>
+
     </section>
   `;
 }
@@ -180,8 +227,10 @@ export function AdminDashboard() {
  */
 export async function initAdminDashboard() {
   const statsContainer = document.getElementById("dashboard-stats-grid");
-  if (!statsContainer) return;
+  const summaryContainer = document.getElementById("dashboard-summary-grid");
+  if (!statsContainer || !summaryContainer) return;
 
   const metrics = await fetchDashboardMetrics();
   statsContainer.innerHTML = buildStatsGrid(metrics);
+  summaryContainer.innerHTML = buildQuickSummary(metrics);
 }

@@ -1,12 +1,14 @@
-import { authLayout } from '../layouts/authLayout';
 import { register } from '../services/auth.service';
+import { navigate } from '../utils/navigate';
+import { ROUTES } from '../router/constants.routes';
+import { setButtonLoading, toast } from '../components/feedback';
 
 export const RegisterPage = () => `
 <div class="w-full max-w-md mx-auto">
 
   <div class="text-center mb-8">
 
-    <h1 class="text-5xl font-black mb-3">
+    <h1 class="text-4xl sm:text-5xl font-black mb-3">
       CineHub
     </h1>
 
@@ -21,8 +23,8 @@ export const RegisterPage = () => `
   class="
   bg-slate-900
   border border-slate-800
-  rounded-3xl
-  p-8
+  rounded-lg
+  p-5 sm:p-8
   space-y-5
   shadow-xl
   "
@@ -43,7 +45,9 @@ export const RegisterPage = () => `
         rounded-xl
         bg-slate-800
         border border-slate-700
-        focus:border-purple-500
+        focus:border-cyan-400
+        focus:ring-2
+        focus:ring-cyan-400/30
         outline-none
         transition
         "
@@ -63,7 +67,9 @@ export const RegisterPage = () => `
         rounded-xl
         bg-slate-800
         border border-slate-700
-        focus:border-purple-500
+        focus:border-cyan-400
+        focus:ring-2
+        focus:ring-cyan-400/30
         outline-none
         transition
         "
@@ -83,7 +89,9 @@ export const RegisterPage = () => `
         rounded-xl
         bg-slate-800
         border border-slate-700
-        focus:border-purple-500
+        focus:border-cyan-400
+        focus:ring-2
+        focus:ring-cyan-400/30
         outline-none
         transition
         "
@@ -103,7 +111,9 @@ export const RegisterPage = () => `
         rounded-xl
         bg-slate-800
         border border-slate-700
-        focus:border-purple-500
+        focus:border-cyan-400
+        focus:ring-2
+        focus:ring-cyan-400/30
         outline-none
         transition
         "
@@ -116,8 +126,9 @@ export const RegisterPage = () => `
       type="submit"
       class="
       w-full
-      bg-purple-600
-      hover:bg-purple-700
+      bg-cyan-500
+      text-slate-950
+      hover:bg-cyan-400
       transition
       py-3
       rounded-xl
@@ -133,8 +144,8 @@ export const RegisterPage = () => `
     <p class="text-center text-slate-400 text-sm">
       ¿Ya tienes cuenta?
       <a
-        href="/login"
-        class="text-purple-400 hover:text-purple-300 transition"
+        id="login-nav"
+        class="text-cyan-300 hover:text-cyan-200 transition cursor-pointer"
       >
         Inicia sesión
       </a>
@@ -156,7 +167,7 @@ export const initRegisterForm = () => {
     e.preventDefault();
 
     const button = form.querySelector('button[type="submit"]');
-    button.disabled = true;
+    const stopLoading = setButtonLoading(button, "Creando cuenta...");
 
     // Obtener valores
     const name = document.getElementById('register-name').value;
@@ -175,8 +186,8 @@ export const initRegisterForm = () => {
     const result = await register(name, email, password, confirmPassword);
 
     if (result.success) {
-      // Registro exitoso - redirigir
-      window.location.href = '/';
+      toast("Registration successful");
+      navigate(ROUTES.HOME, { replace: true });
     } else {
       // Mostrar errores
       if (result.errors) {
@@ -199,9 +210,15 @@ export const initRegisterForm = () => {
       } else if (result.error) {
         document.getElementById('register-error').textContent = result.error;
         document.getElementById('register-error').classList.remove('hidden');
+        toast(result.error, "error");
       }
     }
 
-    button.disabled = false;
+    stopLoading();
+  });
+
+  document.getElementById("login-nav")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    navigate(ROUTES.LOGIN);
   });
 };

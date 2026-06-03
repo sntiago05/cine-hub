@@ -1,6 +1,8 @@
 // news.service.js
 // Handles full CRUD HTTP requests for news articles against JSON-Server.
-// News object structure: { id, title, content }
+import { fetchAllCategories } from "./categories.service.js";
+
+// News object structure: { id, title, content, categoryId, author, createdAt }
 
 const BASE_URL = "http://localhost:3000/news";
 
@@ -18,6 +20,18 @@ export async function fetchAllNews() {
   }
 }
 
+export async function fetchAllNewsWithCategories() {
+  const [news, categories] = await Promise.all([
+    fetchAllNews(),
+    fetchAllCategories(),
+  ]);
+
+  return news.map((article) => ({
+    ...article,
+    category: categories.find((category) => String(category.id) === String(article.categoryId)) ?? null,
+  }));
+}
+
 /**
  * Fetches a single news article by its unique ID.
  * @param {number|string} newsId - The ID of the article to retrieve.
@@ -31,6 +45,20 @@ export async function fetchNewsById(newsId) {
   } catch {
     return null;
   }
+}
+
+export async function fetchNewsByIdWithCategory(newsId) {
+  const [article, categories] = await Promise.all([
+    fetchNewsById(newsId),
+    fetchAllCategories(),
+  ]);
+
+  if (!article) return null;
+
+  return {
+    ...article,
+    category: categories.find((category) => String(category.id) === String(article.categoryId)) ?? null,
+  };
 }
 
 /**

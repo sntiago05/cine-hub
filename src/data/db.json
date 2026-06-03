@@ -3,7 +3,7 @@
     {
       "id": 1,
       "name": "Administrador",
-      "email": "admin@cinehub.com",
+      "email": "a@a.com",
       "password": "asdasd",
       "role": "admin"
     },
@@ -27,15 +27,22 @@
       "password": "abcd1520",
       "role": "user",
       "id": 4
+    },
+    {
+      "name": "santiago",
+      "email": "sa@a.com",
+      "password": "asdasd",
+      "role": "user",
+      "id": 5
     }
   ],
   "favorites": [
     {
-      "id": 1,
-      "userId": 2,
-      "showId": 169,
-      "showName": "Breaking Bad",
-      "image": "https://static.tvmaze.com/uploads/images/medium_portrait/0/2400.jpg"
+      "userId": 5,
+      "showId": 38339,
+      "showName": "A Teacher",
+      "image": "https://static.tvmaze.com/uploads/images/medium_portrait/272/681431.jpg",
+      "id": 2
     }
   ],
   "news": [
@@ -43,11 +50,16 @@
       "id": 1,
       "title": "Nueva temporada anunciada",
       "content": "Se anunció una nueva temporada de una serie popular.",
+      "categoryId": 4,
+      "author": "CineHub editorial",
       "createdAt": "2026-05-31"
     },
     {
       "title": "jasdghadghads",
       "content": "dsada",
+      "categoryId": 1,
+      "author": "CineHub editorial",
+      "createdAt": "2026-06-02",
       "id": 2
     }
   ],

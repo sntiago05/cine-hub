@@ -5,8 +5,12 @@
 import {
   fetchAllCategories,
   createCategory,
-  deleteCategoryById
+  deleteCategoryById,
+  updateCategoryById
 } from "../services/categories.service.js";
+import { fetchAllNews } from "../services/news.service.js";
+import { confirmDialog, setButtonLoading, toast } from "../components/feedback.js";
+import { escapeHtml } from "../utils/utils.js";
 
 const CATEGORIES_CONTAINER_ID = "categories-container";
 const CATEGORY_FORM_ID = "category-form";
@@ -65,7 +69,10 @@ async function renderCategoriesList() {
   if (!container) return;
 
   try {
-    const categories = await fetchAllCategories();
+    const [categories, news] = await Promise.all([
+      fetchAllCategories(),
+      fetchAllNews(),
+    ]);
     
     if (categories.length === 0) {
       container.innerHTML = `
@@ -78,17 +85,29 @@ async function renderCategoriesList() {
 
     container.innerHTML = categories.map(cat => `
       <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-        <span class="text-sm font-medium">${cat.name}</span>
-        <button 
-          data-action="delete-category" 
-          data-id="${cat.id}" 
-          class="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 transition duration-150 cursor-pointer"
-          title="Delete Category"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16" />
-          </svg>
-        </button>
+        <div>
+          <span class="text-sm font-medium">${escapeHtml(cat.name)}</span>
+          <p class="mt-1 text-xs text-gray-400">
+            ${news.filter((article) => String(article.categoryId) === String(cat.id)).length} news articles
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button 
+            data-action="edit-category"
+            data-id="${cat.id}"
+            data-name="${escapeHtml(cat.name)}"
+            class="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300"
+          >
+            Edit
+          </button>
+          <button 
+            data-action="delete-category" 
+            data-id="${cat.id}" 
+            class="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     `).join("");
 
@@ -110,20 +129,80 @@ export async function initAdminCategories() {
     const nameInput = form.name.value.trim();
     if (!nameInput) return;
 
-    await createCategory({ name: nameInput });
-    form.reset();
-    await renderCategoriesList();
+    const stopLoading = setButtonLoading(form.querySelector('button[type="submit"]'), "Creando...");
+    try {
+      const created = await createCategory({ name: nameInput });
+      if (!created) throw new Error("Request failed");
+      form.reset();
+      toast("Category created");
+      await renderCategoriesList();
+    } catch {
+      toast("API failure while creating category", "error");
+    } finally {
+      stopLoading();
+    }
   });
 
   document.getElementById(CATEGORIES_CONTAINER_ID)?.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest('[data-action="edit-category"]');
+    if (editBtn) {
+      const card = editBtn.closest("div.flex");
+      card.innerHTML = `
+        <form data-action="edit-category-form" data-id="${editBtn.dataset.id}" class="flex w-full flex-col gap-3 sm:flex-row">
+          <input name="name" value="${escapeHtml(editBtn.dataset.name)}" required class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+          <div class="flex gap-2">
+            <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">Save</button>
+            <button type="button" data-action="cancel-category-edit" class="rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
+          </div>
+        </form>
+      `;
+      return;
+    }
+
+    if (e.target.closest('[data-action="cancel-category-edit"]')) {
+      await renderCategoriesList();
+      return;
+    }
+
     const deleteBtn = e.target.closest('[data-action="delete-category"]');
     if (!deleteBtn) return;
 
     const id = deleteBtn.dataset.id;
-    const confirmed = window.confirm("Are you sure you want to delete this category?");
+    const confirmed = await confirmDialog({
+      title: "Delete category",
+      message: "This category will be permanently removed.",
+      confirmText: "Delete",
+      danger: true
+    });
     if (!confirmed) return;
 
-    await deleteCategoryById(id);
-    await renderCategoriesList();
+    try {
+      const deleted = await deleteCategoryById(id);
+      if (!deleted) throw new Error("Request failed");
+      toast("Category deleted");
+      await renderCategoriesList();
+    } catch {
+      toast("API failure while deleting category", "error");
+    }
+  });
+
+  document.getElementById(CATEGORIES_CONTAINER_ID)?.addEventListener("submit", async (e) => {
+    const editForm = e.target.closest('[data-action="edit-category-form"]');
+    if (!editForm) return;
+    e.preventDefault();
+    const name = editForm.name.value.trim();
+    if (!name) return;
+
+    const stopLoading = setButtonLoading(editForm.querySelector('button[type="submit"]'), "Saving...");
+    try {
+      const updated = await updateCategoryById(editForm.dataset.id, { name });
+      if (!updated) throw new Error("Request failed");
+      toast("Category updated");
+      await renderCategoriesList();
+    } catch {
+      toast("API failure while updating category", "error");
+    } finally {
+      stopLoading();
+    }
   });
 }

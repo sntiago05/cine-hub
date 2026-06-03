@@ -1,9 +1,11 @@
-import { initLoginForm, LoginPage } from './pages/LoginPage'
-import { initRegisterForm, RegisterPage } from './pages/RegisterPage'
 import { renderRoute } from './router/router';
+import { initFeedback } from './components/feedback';
 
 import './style.css'
 
-document.addEventListener("DOMContentLoaded", () => renderRoute());
+document.addEventListener("DOMContentLoaded", () => {
+  initFeedback();
+  renderRoute();
+});
 window.addEventListener("popstate", renderRoute);
 window.addEventListener("routechange", renderRoute);

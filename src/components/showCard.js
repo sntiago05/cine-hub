@@ -4,18 +4,14 @@
  * @returns {string} HTML de la tarjeta de serie
  */
 export const showCard = (show) => {
-  // Verificar si está en favoritos
-  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-  const isFavorite = favorites.some((fav) => fav.id === show.id);
-  
   return `
 <article
 class="
 bg-slate-900
-rounded-2xl
+rounded-lg
 overflow-hidden
 border border-slate-800
-hover:border-purple-500
+hover:border-cyan-400
 hover:-translate-y-1
 transition-all
 duration-300
@@ -47,13 +43,13 @@ cursor-pointer
         class="
         view-show-btn
         flex-1
-        bg-purple-600
-        hover:bg-purple-700
+        bg-cyan-500
+        hover:bg-cyan-400
         transition
         py-2
-        rounded-xl
+        rounded-lg
         font-medium
-        text-white
+        text-slate-950
         "
       >
         Ver
@@ -62,16 +58,17 @@ cursor-pointer
       <button
         data-show-id="${show.id}"
         data-show-name="${show.name}"
+        data-show-image="${show.image?.medium || ''}"
         class="
         favorite-btn
         px-4
         transition
-        rounded-xl
+        rounded-lg
         font-medium
-        ${isFavorite ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-800 hover:bg-slate-700'}
+        bg-slate-800 hover:bg-slate-700
         "
       >
-        ❤️
+        Favorito
       </button>
 
     </div>
