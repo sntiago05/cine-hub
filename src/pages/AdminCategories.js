@@ -1,6 +1,4 @@
-// AdminCategories.js
-// Renders the HTML shell synchronously via AdminCategories(),
-// then fetches and manages categories asynchronously via initAdminCategories().
+// Renders and manages admin categories.
 
 import {
   fetchAllCategories,

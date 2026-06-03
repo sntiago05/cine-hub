@@ -34,6 +34,13 @@
       "password": "asdasd",
       "role": "user",
       "id": 5
+    },
+    {
+      "name": "matiaz",
+      "email": "matias@ing.com",
+      "password": "asd123",
+      "role": "admin",
+      "id": 6
     }
   ],
   "favorites": [

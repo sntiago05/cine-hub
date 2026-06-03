@@ -1,7 +1,4 @@
-// AdminDashboard.js
-// Admin dashboard view — renders the HTML shell synchronously via AdminDashboard(),
-// then hydrates the stats grid asynchronously via initAdminDashboard().
-// This separation follows the router contract: page() → init?().
+// Renders and hydrates the admin dashboard.
 
 import { fetchAllUsers }      from "../services/users.service";
 import { fetchAllNewsWithCategories } from "../services/news.service";
@@ -9,10 +6,6 @@ import { fetchAllCategories } from "../services/categories.service";
 import { countFavorites }      from "../services/favorites.service";
 import { StatsCard }          from "../components/StatsCard";
 import { escapeHtml }         from "../utils/utils";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 /**
  * Declarative configuration for each metric card.
@@ -64,10 +57,6 @@ const STATS_CARDS_CONFIG = [
            </svg>`,
   },
 ];
-
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
 
 /**
  * Fetches all metric counts concurrently from JSON-Server.
@@ -180,10 +169,6 @@ function buildQuickSummary(metrics) {
     </div>
   `;
 }
-
-// ---------------------------------------------------------------------------
-// Router contract exports
-// ---------------------------------------------------------------------------
 
 /**
  * AdminDashboard — synchronous shell renderer.

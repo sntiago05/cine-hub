@@ -1,6 +1,4 @@
-// ============================================
 // Storage - Gestión de localStorage
-// ============================================
 
 /**
  * Guarda sesión en localStorage

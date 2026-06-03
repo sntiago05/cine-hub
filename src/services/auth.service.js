@@ -1,6 +1,4 @@
-// ============================================
 // Auth Service - Servicios de autenticación
-// ============================================
 
 import { validateLoginForm, validateRegisterForm } from '../utils/validators';
 import { saveSession, clearSession } from '../utils/storage';

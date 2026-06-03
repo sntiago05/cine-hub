@@ -1,6 +1,4 @@
-// categories.service.js
-// Handles full CRUD HTTP requests for categories against JSON-Server.
-// Category object structure: { id, name }
+// Handles full CRUD HTTP requests for categories against JSON Server.
 
 const BASE_URL = "http://localhost:3000/categories";
 

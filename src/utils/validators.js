@@ -1,6 +1,4 @@
-// ============================================
 // Validators - Funciones de validación
-// ============================================
 
 /**
  * Valida formato de email

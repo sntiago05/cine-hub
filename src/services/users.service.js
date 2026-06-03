@@ -1,7 +1,4 @@
-// users.service.js
-// Handles all HTTP requests related to users against JSON-Server.
-// NOTE: Users are created via the auth flow, not from the admin panel.
-//       This service only exposes read and management operations.
+// Handles user reads and management operations against JSON Server.
 
 const BASE_URL = "http://localhost:3000/users";
 

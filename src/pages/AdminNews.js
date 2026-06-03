@@ -1,7 +1,4 @@
-// AdminNews.js
-// Admin news view — renders the HTML shell synchronously via AdminNews(),
-// then fetches and injects news rows asynchronously via initAdminNews().
-// Follows the router contract: page() → init?().
+// Renders and manages admin news.
 
 import {
   fetchAllNewsWithCategories,
@@ -13,10 +10,6 @@ import { fetchAllCategories } from "../services/categories.service.js";
 import { confirmDialog, setButtonLoading, toast } from "../components/feedback.js";
 import { escapeHtml } from "../utils/utils.js";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 /** ID of the table body element where news rows are injected. */
 const NEWS_TABLE_BODY_ID = "news-table-body";
 
@@ -26,10 +19,6 @@ const NEWS_MODAL_ID = "news-modal";
 /** ID of the modal form element. */
 const NEWS_FORM_ID = "news-form";
 let categoriesCache = [];
-
-// ---------------------------------------------------------------------------
-// Private helpers — rendering
-// ---------------------------------------------------------------------------
 
 /**
  * Builds a single table row HTML string from a news article object.
@@ -177,10 +166,6 @@ function buildSkeletonRows() {
     </tr>
   `).join("");
 }
-
-// ---------------------------------------------------------------------------
-// Private helpers — modal
-// ---------------------------------------------------------------------------
 
 /**
  * Builds the HTML string for the create/edit modal dialog.
@@ -350,10 +335,6 @@ function buildNewsModal(article = null) {
   `;
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers — DOM utilities
-// ---------------------------------------------------------------------------
-
 /**
  * Refreshes the table body with the latest news data from JSON-Server.
  * Called after every successful create, update, or delete operation.
@@ -385,10 +366,6 @@ function openNewsModal(article = null) {
 function closeNewsModal() {
   document.getElementById(NEWS_MODAL_ID)?.remove();
 }
-
-// ---------------------------------------------------------------------------
-// Private helpers — event handlers
-// ---------------------------------------------------------------------------
 
 /**
  * Handles the news form submission for both create and update operations.
@@ -496,10 +473,6 @@ function attachNewsFormListener() {
   const form = document.getElementById(NEWS_FORM_ID);
   form?.addEventListener("submit", handleNewsFormSubmit);
 }
-
-// ---------------------------------------------------------------------------
-// Router contract exports
-// ---------------------------------------------------------------------------
 
 /**
  * AdminNews — synchronous HTML shell renderer.

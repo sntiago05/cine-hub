@@ -1,8 +1,5 @@
-// news.service.js
-// Handles full CRUD HTTP requests for news articles against JSON-Server.
+// Handles full CRUD HTTP requests for news articles against JSON Server.
 import { fetchAllCategories } from "./categories.service.js";
-
-// News object structure: { id, title, content, categoryId, author, createdAt }
 
 const BASE_URL = "http://localhost:3000/news";
 

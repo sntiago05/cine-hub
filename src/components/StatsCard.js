@@ -1,6 +1,4 @@
-// StatsCard.js
-// Reusable presentational component that renders a single metric card.
-// Used by AdminDashboardPage to display key statistics at a glance.
+// Reusable metric card for the admin dashboard.
 
 /**
  * Generates an HTML string representing a statistics metric card.
